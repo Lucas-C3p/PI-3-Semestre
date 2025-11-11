@@ -21,7 +21,7 @@ O projeto segue uma arquitetura de três camadas (Controller, Service, Repositor
 
 O backend segue o padrão MVC (Model-View-Controller), adaptado para uma API REST, com a adição da camada de Serviço (Service) para isolar a lógica de negócio:
 
-*   **Model:** Contém a classe `Usuario`, que representa a entidade de dados e a coleção no MongoDB.
+*   **Model:** Contém as classes `Usuario` e `Produto`, que representam as entidades de dados e as coleções no MongoDB.
 *   **Repository:** Interface que estende `MongoRepository`, responsável pela comunicação direta com o banco de dados (CRUD).
 *   **Service:** Contém a lógica de negócio (ex: verificar se o CPF/CNPJ já existe, autenticar o usuário). O Controller chama o Service.
 *   **Controller:** Responsável por receber as requisições HTTP, chamar o Service e retornar as respostas HTTP.
