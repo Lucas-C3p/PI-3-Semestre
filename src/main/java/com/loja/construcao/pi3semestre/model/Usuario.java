@@ -10,7 +10,7 @@ public class Usuario {
     private String cpfCnpj;
     private String nome;
     private String email;
-    private String senha; // Em um projeto real, a senha deve ser criptografada!
+    private String senha; 
 
     // Construtor padrão
     public Usuario() {
