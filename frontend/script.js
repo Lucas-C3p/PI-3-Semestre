@@ -85,10 +85,10 @@ if (loginForm) {
             if (response.ok) {
                 // Em um projeto real, você salvaria o token de autenticação aqui
                 showMessage('message', 'Login bem-sucedido! Redirecionando...', 'success');
-                // Simulação de redirecionamento para a tela principal
+                // Redirecionamento para a tela principal
                 setTimeout(() => {
-                    alert('Redirecionando para a tela principal do sistema!');
-                    // window.location.href = 'dashboard.html'; // Descomente para redirecionar
+                    window.location.href = 'inicio.html';
+                    // Comentado: window.location.href = 'dashboard.html';
                 }, 2000);
             } else {
                 const errorText = await response.text();

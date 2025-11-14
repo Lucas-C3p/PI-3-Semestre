@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Afazeres</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Estilos específicos para a tela de Cadastro de Afazeres */
+        .card {
+            max-width: 500px;
+            text-align: left;
+        }
+        .nav-bar {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #007bff;
+        }
+        .nav-bar a {
+            text-decoration: none;
+            color: #007bff;
+            font-weight: bold;
+            padding: 5px 10px;
+            transition: color 0.3s;
+        }
+        .nav-bar a:hover {
+            color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>Cadastrar Novo Afazer</h1>
+
+            <div class="nav-bar">
+                <a href="inicio.html">Início/Calendário</a>
+                <a href="estoque.html">Estoque</a>
+                <a href="chat.html">Chat</a>
+                <a href="login.html" style="color: #dc3545;">Sair</a>
+            </div>
+
+            <form id="afazerForm">
+                <div class="input-group">
+                    <label for="afazerData">Data</label>
+                    <input type="date" id="afazerData" required>
+                </div>
+                <div class="input-group">
+                    <label for="afazerHora">Hora</label>
+                    <input type="time" id="afazerHora" required>
+                </div>
+                <div class="input-group">
+                    <label for="afazerDescricao">Descrição do Afazer</label>
+                    <textarea id="afazerDescricao" rows="4" required style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;"></textarea>
+                </div>
+                <button type="submit" class="btn-primary">Salvar Afazer</button>
+                <a href="inicio.html" class="btn-secondary" style="display: block; text-decoration: none; text-align: center;">Cancelar</a>
+            </form>
+            <p id="message" class="message" style="margin-top: 20px;"></p>
+        </div>
+    </div>
+    <script>
+        const afazerForm = document.getElementById('afazerForm');
+        const messageElement = document.getElementById('message');
+
+        function showMessage(text, type) {
+            messageElement.textContent = text;
+            messageElement.className = `message ${type}`;
+            messageElement.style.display = 'block';
+            setTimeout(() => {
+                messageElement.style.display = 'none';
+            }, 3000);
+        }
+
+        afazerForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const data = document.getElementById('afazerData').value;
+            const hora = document.getElementById('afazerHora').value;
+            const descricao = document.getElementById('afazerDescricao').value;
+
+            // Simulação de chamada de API bem-sucedida (Mockup)
+            showMessage(`Simulação: Afazer agendado para ${data} às ${hora} com sucesso!`, 'success');
+
+            // Limpar formulário
+            afazerForm.reset();
+        });
+    </script>
+</body>
+</html>

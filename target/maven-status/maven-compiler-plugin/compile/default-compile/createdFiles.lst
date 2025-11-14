@@ -1,4 +1,6 @@
-com\loja\construcao\pi3semestre\repository\UsuarioRepository.class
-com\loja\construcao\pi3semestre\controller\AuthController.class
 com\loja\construcao\pi3semestre\Pi3SemestreApplication.class
 com\loja\construcao\pi3semestre\model\Usuario.class
+com\loja\construcao\pi3semestre\model\Produto.class
+com\loja\construcao\pi3semestre\repository\UsuarioRepository.class
+com\loja\construcao\pi3semestre\controller\AuthController.class
+com\loja\construcao\pi3semestre\service\UsuarioService.class
