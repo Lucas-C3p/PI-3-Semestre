@@ -1,365 +1,346 @@
-const API_BASE_URL = 'http://localhost:8080/api';
-
-function showMessage(elementId, text, type) {
-    const messageElement = document.getElementById(elementId || 'message');
-    if (messageElement) {
-        messageElement.textContent = text;
-        messageElement.className = `message ${type}`;
-        messageElement.style.display = 'block';
-        setTimeout(() => {
-            messageElement.style.display = 'none';
-        }, 5000);
-    }
-}
-
-function cleanCpfCnpj(value) {
-    return value.replace(/[.\-/]/g, '');
-}
-
-const cadastroForm = document.getElementById('cadastroForm');
-if (cadastroForm) {
-    cadastroForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const nome = document.getElementById('nome').value;
-        const cpfCnpj = cleanCpfCnpj(document.getElementById('cpfCnpj').value);
-        const email = document.getElementById('email').value;
-        const senha = document.getElementById('senha').value;
-
-        const userData = {
-            nome: nome,
-            cpfCnpj: cpfCnpj,
-            email: email,
-            senha: senha
-        };
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/auth/register`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(userData)
-            });
-
-            if (response.ok) {
-                showMessage('message', 'Cadastro realizado com sucesso! Redirecionando para o login...', 'success');
-                setTimeout(() => {
-                    window.location.href = 'login.html';
-                }, 2000);
-            } else {
-                const errorText = await response.text();
-                showMessage('message', `Erro no cadastro: ${errorText}`, 'error');
-            }
-        } catch (error) {
-            showMessage('message', 'Erro de conexão com o servidor.', 'error');
-            console.error('Erro:', error);
-        }
-    });
-}
-
-const loginForm = document.getElementById('loginForm');
-if (loginForm) {
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const cpfCnpj = cleanCpfCnpj(document.getElementById('cpfCnpj').value);
-        const senha = document.getElementById('senha').value;
-
-        const loginData = {
-            cpfCnpj: cpfCnpj,
-            senha: senha
-        };
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/auth/login`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(loginData)
-            });
-
-            if (response.ok) {
-                showMessage('message', 'Login bem-sucedido! Redirecionando...', 'success');
-                setTimeout(() => {
-                    window.location.href = 'inicio.html';
-                }, 2000);
-            } else {
-                const errorText = await response.text();
-                showMessage('message', `Erro no login: ${errorText}`, 'error');
-            }
-        } catch (error) {
-            showMessage('message', 'Erro de conexão com o servidor.', 'error');
-            console.error('Erro:', error);
-        }
-    });
-}
 
 async function carregarProdutos() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/produtos`);
-        const produtos = await response.json();
-        const listaProdutos = document.getElementById('listaProdutos');
-        if (listaProdutos) {
-            listaProdutos.innerHTML = '';
-            produtos.forEach(produto => {
-                const div = document.createElement('div');
-                div.className = 'produto-item';
-                div.innerHTML = `
-                    <h4>${produto.nome}</h4>
-                    <p>Descrição: ${produto.descricao}</p>
-                    <p>Preço: R$ ${produto.preco.toFixed(2)}</p>
-                    <p>Estoque: ${produto.quantidadeEstoque}</p>
-                    <button onclick="editarProduto('${produto.id}')">Editar</button>
-                    <button onclick="deletarProduto('${produto.id}')">Deletar</button>
-                `;
-                listaProdutos.appendChild(div);
-            });
-        }
-    } catch (error) {
-        console.error('Erro ao carregar produtos:', error);
+  try {
+    const res = await fetch('http://localhost:8080/api/produtos');
+    if (!res.ok) {
+      console.error('Erro HTTP ao buscar produtos:', res.status, res.statusText);
+      const texto = await res.text();
+      console.log('Resposta do servidor (texto):', texto);
+      const listaErro = document.getElementById('listaProdutos');
+      if (listaErro) listaErro.innerHTML = '<p>Erro ao carregar produtos.</p>';
+      return;
     }
+
+    const dados = await res.json();
+    console.log('dados recebidos:', dados);
+
+    if (!Array.isArray(dados)) {
+      console.error('Resposta não é um array:', dados);
+      const listaErro = document.getElementById('listaProdutos');
+      if (listaErro) listaErro.innerHTML = '<p>Resposta inválida do servidor.</p>';
+      return;
+    }
+
+    const lista = document.getElementById('listaProdutos');
+    if (lista) lista.innerHTML = '';
+    if (dados.length === 0) {
+      if (lista) lista.innerHTML = '<p>Sem produtos cadastrados.</p>';
+    } else {
+      dados.forEach(p => {
+        const item = document.createElement('div');
+        item.className = 'item-estoque';
+        const info = document.createElement('div');
+        info.className = 'produto-info';
+        info.innerHTML = `<strong>${p.nome}</strong><br>${p.descricao}<br>R$ ${p.preco} — Qtd: ${p.quantidade}`;
+        item.appendChild(info);
+        const btns = document.createElement('div');
+        // You can add edit/delete buttons here in future
+        item.appendChild(btns);
+        if (lista) lista.appendChild(item);
+      });
+    }
+  } catch (err) {
+    console.error('Erro ao carregar produtos:', err);
+    const listaErro = document.getElementById('listaProdutos');
+    if (listaErro) listaErro.innerHTML = '<p>Erro ao carregar produtos.</p>';
+  }
 }
 
-const formProduto = document.getElementById('formProduto');
-if (formProduto) {
-    formProduto.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const nome = document.getElementById('nomeProduto').value;
-        const descricao = document.getElementById('descricaoProduto').value;
-        const preco = parseFloat(document.getElementById('precoProduto').value);
-        const quantidadeEstoque = parseInt(document.getElementById('quantidadeProduto').value);
-
-        const produtoData = {
-            nome: nome,
-            descricao: descricao,
-            preco: preco,
-            quantidadeEstoque: quantidadeEstoque
-        };
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/produtos`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(produtoData)
-            });
-
-            if (response.ok) {
-                showMessage('mensagemProduto', 'Produto adicionado com sucesso!', 'success');
-                formProduto.reset();
-                carregarProdutos();
-            } else {
-                showMessage('mensagemProduto', 'Erro ao adicionar produto.', 'error');
-            }
-        } catch (error) {
-            showMessage('mensagemProduto', 'Erro de conexão com o servidor.', 'error');
-            console.error('Erro:', error);
-        }
+async function cadastrarProduto(produto) {
+  try {
+    const res = await fetch('http://localhost:8080/api/produtos', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(produto)
     });
-}
-
-async function deletarProduto(id) {
-    if (confirm('Tem certeza que deseja deletar este produto?')) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/produtos/${id}`, {
-                method: 'DELETE'
-            });
-
-            if (response.ok) {
-                showMessage('mensagemProduto', 'Produto deletado com sucesso!', 'success');
-                carregarProdutos();
-            } else {
-                showMessage('mensagemProduto', 'Erro ao deletar produto.', 'error');
-            }
-        } catch (error) {
-            console.error('Erro:', error);
-        }
+    if (!res.ok) {
+      console.error('Erro ao cadastrar produto:', res.status, await res.text());
+      const msg = document.getElementById('mensagemProduto');
+      if (msg) msg.textContent = 'Erro ao cadastrar produto.';
+      return;
     }
+    const criado = await res.json();
+    console.log('Produto criado:', criado);
+    const msg = document.getElementById('mensagemProduto');
+    if (msg) {
+      msg.textContent = 'Produto cadastrado com sucesso!';
+      setTimeout(()=> msg.textContent='', 3000);
+    }
+    carregarProdutos();
+  } catch (err) {
+    console.error('Erro no POST:', err);
+    const msg = document.getElementById('mensagemProduto');
+    if (msg) msg.textContent = 'Erro ao cadastrar produto.';
+  }
 }
 
+// Attach form handler
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('formProduto');
+  if (form) {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const nome = document.getElementById('nomeProduto').value.trim();
+      const descricao = document.getElementById('descricaoProduto').value.trim();
+      const preco = parseFloat(document.getElementById('precoProduto').value) || 0;
+      const quantidade = parseInt(document.getElementById('quantidadeProduto').value) || 0;
+
+      if (!nome) {
+        const msg = document.getElementById('mensagemProduto');
+        if (msg) { msg.textContent = 'Nome é obrigatório.'; setTimeout(()=> msg.textContent='',3000); }
+        return;
+      }
+
+      const produto = { nome, descricao, preco, quantidade };
+      cadastrarProduto(produto);
+
+      form.reset();
+    });
+  }
+
+  // initial load
+  carregarProdutos();
+});
+
+
+// Afazeres (tarefas)
 async function carregarTarefas() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/tarefas`);
-        const tarefas = await response.json();
-        const listaTarefas = document.getElementById('listaTarefas');
-        if (listaTarefas) {
-            listaTarefas.innerHTML = '';
-            tarefas.forEach(tarefa => {
-                const div = document.createElement('div');
-                div.className = 'tarefa-item';
-                div.innerHTML = `
-                    <h4>${tarefa.titulo}</h4>
-                    <p>Descrição: ${tarefa.descricao}</p>
-                    <p>Vencimento: ${tarefa.dataVencimento}</p>
-                    <p>Status: ${tarefa.status}</p>
-                    <p>Responsável: ${tarefa.responsavel}</p>
-                    <button onclick="editarTarefa('${tarefa.id}')">Editar</button>
-                    <button onclick="deletarTarefa('${tarefa.id}')">Deletar</button>
-                `;
-                listaTarefas.appendChild(div);
-            });
-        }
-    } catch (error) {
-        console.error('Erro ao carregar tarefas:', error);
+  try {
+    const res = await fetch('http://localhost:8080/api/afazeres');
+    if (!res.ok) {
+      console.error('Erro HTTP ao buscar afazeres:', res.status, res.statusText);
+      const texto = await res.text();
+      console.log('Resposta do servidor (texto):', texto);
+      const listaErro = document.getElementById('listaTarefas');
+      if (listaErro) listaErro.innerHTML = '<p>Erro ao carregar afazeres.</p>';
+      return;
     }
+    const dados = await res.json();
+    console.log('afazeres recebidos:', dados);
+    if (!Array.isArray(dados)) {
+      console.error('Resposta não é um array:', dados);
+      const listaErro = document.getElementById('listaTarefas');
+      if (listaErro) listaErro.innerHTML = '<p>Resposta inválida do servidor.</p>';
+      return;
+    }
+    const lista = document.getElementById('listaTarefas');
+    if (lista) lista.innerHTML = '';
+    if (dados.length === 0) {
+      if (lista) lista.innerHTML = '<p>Sem afazeres cadastrados.</p>';
+    } else {
+      dados.forEach(t => {
+        const item = document.createElement('div');
+        item.className = 'item-tarefa';
+        const info = document.createElement('div');
+        info.className = 'tarefa-info';
+        info.innerHTML = `<strong>${t.titulo}</strong><br>${t.descricao}<br>Venc.: ${t.dataVencimento} — Status: ${t.status} — Resp.: ${t.responsavel}`;
+        item.appendChild(info);
+        if (lista) lista.appendChild(item);
+      });
+    }
+  } catch (err) {
+    console.error('Erro ao carregar afazeres:', err);
+    const listaErro = document.getElementById('listaTarefas');
+    if (listaErro) listaErro.innerHTML = '<p>Erro ao carregar afazeres.</p>';
+  }
 }
 
-const formTarefa = document.getElementById('formTarefa');
-if (formTarefa) {
-    formTarefa.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const titulo = document.getElementById('tituloTarefa').value;
-        const descricao = document.getElementById('descricaoTarefa').value;
-        const dataVencimento = document.getElementById('dataVencimentoTarefa').value;
-        const status = document.getElementById('statusTarefa').value;
-        const responsavel = document.getElementById('responsavelTarefa').value;
-
-        const tarefaData = {
-            titulo: titulo,
-            descricao: descricao,
-            dataVencimento: dataVencimento,
-            status: status,
-            responsavel: responsavel
-        };
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/tarefas`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(tarefaData)
-            });
-
-            if (response.ok) {
-                showMessage('mensagemTarefa', 'Tarefa adicionada com sucesso!', 'success');
-                formTarefa.reset();
-                carregarTarefas();
-            } else {
-                showMessage('mensagemTarefa', 'Erro ao adicionar tarefa.', 'error');
-            }
-        } catch (error) {
-            showMessage('mensagemTarefa', 'Erro de conexão com o servidor.', 'error');
-            console.error('Erro:', error);
-        }
+async function cadastrarTarefa(tarefa) {
+  try {
+    const res = await fetch('http://localhost:8080/api/afazeres', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(tarefa)
     });
-}
-
-async function deletarTarefa(id) {
-    if (confirm('Tem certeza que deseja deletar esta tarefa?')) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/tarefas/${id}`, {
-                method: 'DELETE'
-            });
-
-            if (response.ok) {
-                showMessage('mensagemTarefa', 'Tarefa deletada com sucesso!', 'success');
-                carregarTarefas();
-            } else {
-                showMessage('mensagemTarefa', 'Erro ao deletar tarefa.', 'error');
-            }
-        } catch (error) {
-            console.error('Erro:', error);
-        }
+    if (!res.ok) {
+      console.error('Erro ao cadastrar tarefa:', res.status, await res.text());
+      const msg = document.getElementById('mensagemTarefa');
+      if (msg) msg.textContent = 'Erro ao cadastrar tarefa.';
+      return;
     }
-}
-
-async function carregarMensagens() {
-    try {
-        const response = await fetch(`${API_BASE_URL}/mensagens`);
-        const mensagens = await response.json();
-        const listaChat = document.getElementById('listaChat');
-        if (listaChat) {
-            listaChat.innerHTML = '';
-            mensagens.forEach(msg => {
-                const div = document.createElement('div');
-                div.className = `mensagem-item ${msg.lida ? 'lida' : 'nao-lida'}`;
-                div.innerHTML = `
-                    <p><strong>De:</strong> ${msg.remetente}</p>
-                    <p><strong>Para:</strong> ${msg.destinatario}</p>
-                    <p><strong>Mensagem:</strong> ${msg.conteudo}</p>
-                    <p><strong>Data:</strong> ${msg.dataMensagem}</p>
-                    <button onclick="deletarMensagem('${msg.id}')">Deletar</button>
-                `;
-                listaChat.appendChild(div);
-            });
-        }
-    } catch (error) {
-        console.error('Erro ao carregar mensagens:', error);
+    const criado = await res.json();
+    console.log('Tarefa criada:', criado);
+    const msg = document.getElementById('mensagemTarefa');
+    if (msg) {
+      msg.textContent = 'Tarefa cadastrada com sucesso!';
+      setTimeout(()=> msg.textContent='', 3000);
     }
-}
-
-const formChat = document.getElementById('formChat');
-if (formChat) {
-    formChat.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const remetente = document.getElementById('remetente').value;
-        const destinatario = document.getElementById('destinatario').value;
-        const conteudo = document.getElementById('conteudoMensagem').value;
-        const dataMensagem = new Date().toLocaleString();
-
-        const mensagemData = {
-            remetente: remetente,
-            destinatario: destinatario,
-            conteudo: conteudo,
-            dataMensagem: dataMensagem,
-            lida: false
-        };
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/mensagens`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(mensagemData)
-            });
-
-            if (response.ok) {
-                showMessage('mensagemChat', 'Mensagem enviada com sucesso!', 'success');
-                formChat.reset();
-                carregarMensagens();
-            } else {
-                showMessage('mensagemChat', 'Erro ao enviar mensagem.', 'error');
-            }
-        } catch (error) {
-            showMessage('mensagemChat', 'Erro de conexão com o servidor.', 'error');
-            console.error('Erro:', error);
-        }
-    });
-}
-
-async function deletarMensagem(id) {
-    try {
-        const response = await fetch(`${API_BASE_URL}/mensagens/${id}`, {
-            method: 'DELETE'
-        });
-
-        if (response.ok) {
-            showMessage('mensagemChat', 'Mensagem deletada com sucesso!', 'success');
-            carregarMensagens();
-        } else {
-            showMessage('mensagemChat', 'Erro ao deletar mensagem.', 'error');
-        }
-    } catch (error) {
-        console.error('Erro:', error);
-    }
+    carregarTarefas();
+  } catch (err) {
+    console.error('Erro no POST tarefa:', err);
+    const msg = document.getElementById('mensagemTarefa');
+    if (msg) msg.textContent = 'Erro ao cadastrar tarefa.';
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    if (document.getElementById('listaProdutos')) {
-        carregarProdutos();
+  const form = document.getElementById('formTarefa');
+  if (form) {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const titulo = document.getElementById('tituloTarefa').value.trim();
+      const descricao = document.getElementById('descricaoTarefa').value.trim();
+      const dataVencimento = document.getElementById('dataVencimentoTarefa').value;
+      const status = document.getElementById('statusTarefa').value;
+      const responsavel = document.getElementById('responsavelTarefa').value.trim();
+
+      if (!titulo) {
+        const msg = document.getElementById('mensagemTarefa');
+        if (msg) { msg.textContent = 'Título é obrigatório.'; setTimeout(()=> msg.textContent='',3000); }
+        return;
+      }
+
+      const tarefa = { titulo, descricao, dataVencimento, status, responsavel };
+      cadastrarTarefa(tarefa);
+      form.reset();
+    });
+  }
+});
+
+// Autenticação: cadastro e login
+async function cadastrarUsuario(usuario) {
+  try {
+    const res = await fetch('http://localhost:8080/api/usuarios', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(usuario)
+    });
+    if (!res.ok) {
+      const txt = await res.text();
+      console.error('Erro ao cadastrar usuário:', res.status, txt);
+      const msg = document.getElementById('mensagemCadastro');
+      if (msg) msg.textContent = 'Erro ao cadastrar: ' + (txt || res.status);
+      return;
     }
-    if (document.getElementById('listaTarefas')) {
-        carregarTarefas();
+    const json = await res.json();
+    console.log('Usuário cadastrado:', json);
+    const msg = document.getElementById('mensagemCadastro');
+    if (msg) { msg.textContent = 'Cadastro realizado com sucesso!'; setTimeout(()=> msg.textContent='',3000); }
+    // opcional: redirecionar para login
+    window.location.href = 'login.html';
+  } catch (err) {
+    console.error('Erro no cadastro:', err);
+    const msg = document.getElementById('mensagemCadastro');
+    if (msg) msg.textContent = 'Erro ao cadastrar usuário.';
+  }
+}
+
+async function loginUsuario(credentials) {
+  try {
+    const res = await fetch('http://localhost:8080/api/auth/login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(credentials)
+    });
+    if (!res.ok) {
+      const txt = await res.text();
+      console.error('Erro no login:', res.status, txt);
+      const msg = document.getElementById('mensagemLogin');
+      if (msg) msg.textContent = 'Credenciais inválidas.';
+      return;
     }
-    if (document.getElementById('listaChat')) {
-        carregarMensagens();
-    }
+    const json = await res.json();
+    console.log('Login success:', json);
+    // Simples: armazenar username no sessionStorage e redirecionar
+    sessionStorage.setItem('usuario', json.username);
+    console.log('Redirecionando para inicio...'); window.location.href = 'inicio.html';
+  } catch (err) {
+    console.error('Erro no login:', err);
+    const msg = document.getElementById('mensagemLogin');
+    if (msg) msg.textContent = 'Erro ao fazer login.';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // cadastro.html form
+  const formCad = document.getElementById('formCadastro');
+  if (formCad) {
+    formCad.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const username = document.getElementById('usernameCadastro').value.trim();
+      const senha = document.getElementById('senhaCadastro').value;
+      if (!username || !senha) {
+        const msg = document.getElementById('mensagemCadastro');
+        if (msg) { msg.textContent = 'Preencha username e senha.'; setTimeout(()=> msg.textContent='',3000); }
+        return;
+      }
+      cadastrarUsuario({ username, senha });
+    });
+  }
+
+  // login.html form
+  const formLogin = document.getElementById('formLogin');
+  if (formLogin) {
+    formLogin.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const username = document.getElementById('usernameLogin').value.trim();
+      const senha = document.getElementById('senhaLogin').value;
+      if (!username || !senha) {
+        const msg = document.getElementById('mensagemLogin');
+        if (msg) { msg.textContent = 'Preencha username e senha.'; setTimeout(()=> msg.textContent='',3000); }
+        return;
+      }
+      loginUsuario({ username, senha });
+    });
+  }
+});
+
+
+// Compatibility handlers for alternative form IDs/field names
+document.addEventListener('DOMContentLoaded', () => {
+  // If existing handlers didn't attach because of different IDs, attach compatibility handlers.
+  // Cadastro compatibility: form id 'cadastroForm' with fields 'nome' and 'senha', message id 'message'
+  const cadastroForm = document.getElementById('cadastroForm');
+  if (cadastroForm) {
+    cadastroForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const cpf = document.getElementById('cpfCnpj') ? document.getElementById('cpfCnpj').value.trim() : '';
+      const usernamePrefer = document.getElementById('usernameCadastro') ? document.getElementById('usernameCadastro').value.trim() : '';
+      const nomePrefer = document.getElementById('nome') ? document.getElementById('nome').value.trim() : '';
+      const username = cpf || usernamePrefer || nomePrefer || '';
+      const senha = document.getElementById('senha') ? document.getElementById('senha').value : (document.getElementById('senhaCadastro') ? document.getElementById('senhaCadastro').value : '');
+      const msgEl = document.getElementById('mensagemCadastro') || document.getElementById('message');
+      if (!username || !senha) {
+        if (msgEl) { msgEl.textContent = 'Preencha username (CPF/CNPJ) e senha.'; setTimeout(()=> msgEl.textContent='',3000); }
+        return;
+      }
+      // send cpfCnpj as username to backend
+      cadastrarUsuario({ username, senha });
+    });
+  }
+
+  // Login compatibility: form id 'loginForm' with cpfCnpj and senha, message id 'message'
+  const loginForm = document.getElementById('loginForm');
+  if (loginForm) {
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const username = document.getElementById('usernameLogin') ? document.getElementById('usernameLogin').value.trim() : (document.getElementById('cpfCnpj') ? document.getElementById('cpfCnpj').value.trim() : '');
+      const senha = document.getElementById('senhaLogin') ? document.getElementById('senhaLogin').value : (document.getElementById('senha') ? document.getElementById('senha').value : '');
+      const msgEl = document.getElementById('mensagemLogin') || document.getElementById('message');
+      if (!username || !senha) {
+        if (msgEl) { msgEl.textContent = 'Preencha username e senha.'; setTimeout(()=> msgEl.textContent='',3000); }
+        return;
+      }
+      loginUsuario({ username, senha });
+    });
+  }
+});
+
+
+
+document.addEventListener('DOMContentLoaded', () => {
+  const loginForm = document.getElementById('loginForm');
+  if (loginForm) {
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const username = document.getElementById('cpfCnpj') ? document.getElementById('cpfCnpj').value.trim() : '';
+      const senha = document.getElementById('senha') ? document.getElementById('senha').value : '';
+      const msgEl = document.getElementById('message');
+      if (!username || !senha) {
+        if (msgEl) { msgEl.textContent = 'Preencha os dados.'; setTimeout(()=> msgEl.textContent='',3000); }
+        return;
+      }
+      loginUsuario({ username, senha });
+    });
+  }
 });
